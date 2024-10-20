@@ -1,6 +1,7 @@
 /* Login form */
-import React, { useState } from 'react'
-import { validateEmail, validatePassword } from './auth_utils'
+import React, { useState } from 'react';
+import { validateEmail, validatePassword } from './auth_utils';
+import { api_url } from '../constants';
 
 function LoginForm() {
   const [errors, setErrors] = useState({});

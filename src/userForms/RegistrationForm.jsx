@@ -1,9 +1,11 @@
 /* Registration form */
-import { React, useState } from 'react'
-import { validateEmail, validatePassword } from './auth_utils'
+import { React, useState } from 'react';
+import { validateEmail, validatePassword } from './auth_utils';
+import { api_url } from '../constants';
 
 function RegistrationForm() {
   const [errors, setErrors] = useState({});
+  const [responseMessage, setResponseMessage] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -20,7 +22,7 @@ function RegistrationForm() {
   }
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     
@@ -43,14 +45,62 @@ function RegistrationForm() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Form is valid, proceed with authentication
-      console.log('Form is valid, proceed with authentication');
-      // Redirect and submit logic will be written here
+      const SubmissionRespErrors = {};
+
+      console.log('Form is valid, proceeding with submission...');
+      
+      try {
+        const response = await fetch(`${api_url}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+        
+        if (!response.ok) {
+          SubmissionRespErrors.ResonseError = "Error in submitting the response form."
+          setErrors(SubmissionRespErrors);
+        } else {
+          const data = await response.json();
+          setResponseMessage(`User ${data.full_name} has been created.`)
+          
+          formData.email = "";
+          formData.password = "";
+          formData.confirm_password = "";
+          formData.full_name = "";
+        }
+        
+        
+      } catch {
+        console.log('Error: ', SubmissionRespErrors.ResonseError);
+      }
+
     }
   };
 
   return (
     <div>     
+      
+      {errors.ResonseError && (<div className="flex items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+          <svg className="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+          </svg>
+          <span className="sr-only">Info</span>
+          <div>
+            <span className="font-medium">Error: </span>{errors.ResonseError}
+          </div>
+        </div>)}
+      
+      {responseMessage && (<div className="flex items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+          <svg className="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+          </svg>
+          <span className="sr-only">Info</span>
+          <div>
+            <span className="font-medium"></span>{responseMessage}
+          </div>
+        </div>)}
 
       <form className="max-w-sm mx-auto" onSubmit={handleSubmit}>
         <div className="mb-5">
