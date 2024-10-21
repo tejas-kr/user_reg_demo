@@ -1,14 +1,20 @@
 /* Login form */
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'
 import { validateEmail, validatePassword } from './auth_utils';
 import { api_url } from '../constants';
 
+const AUTH_COOKIE_NAME = 'jwt_token';
+
 function LoginForm() {
   const [errors, setErrors] = useState({});
+  const [responseMessage, setResponseMessage] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,8 +24,39 @@ function LoginForm() {
     }));
   }
 
+  const login = async () => {
+    // formData contains email and password.
+    try {
+      const response = await fetch(`${api_url}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
 
-  const handleSubmit = (e) => {
+      if (!response.ok) {
+        throw new Error('Authentication failed');
+      } else {
+        const data = await response.json();
+        setResponseMessage(`User ${data.full_name} Authenticated.`)
+  
+        const { access_token, token_type } = data;
+  
+        document.cookie = `${AUTH_COOKIE_NAME}=${access_token}; path=/; max-age=86400; secure; samesite=strict; httponly`;
+        
+        formData.email = "";
+        formData.password = "";
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -34,14 +71,41 @@ function LoginForm() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Form is valid, proceed with authentication
+      setErrors('');
       console.log('Form is valid, proceed with authentication');
-      // Redirect and submit logic will be written here
+      
+      try {
+        await login();
+        navigate('/dashboard'); // Redirect on successful login
+      } catch (err) {
+        console.log(err);
+        setErrors({credentialError: 'Invalid credentials'});
+      }
     }
   };
 
   return (
     <div>
+      {errors.credentialError && (<div className="flex items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+        <svg className="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+        </svg>
+        <span className="sr-only">Info</span>
+        <div>
+          <span className="font-medium">Error: </span>{errors.credentialError}
+        </div>
+      </div>)}
+      
+      {responseMessage && (<div className="flex items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+        <svg className="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+        </svg>
+        <span className="sr-only">Info</span>
+        <div>
+          <span className="font-medium"></span>{responseMessage}
+        </div>
+      </div>)}
+
       <form onSubmit={handleSubmit} className="max-w-sm mx-auto">
         <div className="mb-5">
           <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">

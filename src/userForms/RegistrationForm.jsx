@@ -72,8 +72,9 @@ function RegistrationForm() {
         }
         
         
-      } catch {
+      } catch (error) {
         console.log('Error: ', SubmissionRespErrors.ResonseError);
+        throw error;
       }
 
     }
